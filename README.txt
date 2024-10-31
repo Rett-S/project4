@@ -1,4 +1,4 @@
-CS 4760 - Project 4: Project Scheduling
+CS 4760 - Project 4: Process Scheduling
 Rett Swyers
 
 Intructions on how to run this file:

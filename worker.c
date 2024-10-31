@@ -1,5 +1,4 @@
 //Rett Swyers - CS 4760
-//Oct 27, 2024
 
 #include<unistd.h>
 #include<sys/types.h>
@@ -8,6 +7,7 @@
 #include<signal.h>
 #include<sys/ipc.h>
 #include<sys/shm.h>
+#include<string.h>
 
 #define SHMKEY 44197
 #define BUFF_SZ sizeof (int)
@@ -23,7 +23,6 @@ int main(int argc, char** argv) {
 
     int s = atoi(argv[1]); //this is an integer to store the amount of seconds
     int n = atoi(argv[2]); //this is an integer to store the amount of nanoseconds
-
 
     int shmid = shmget(SHMKEY, BUFF_SZ, 0777 | IPC_CREAT);
     if (shmid == -1) {
@@ -50,11 +49,12 @@ int main(int argc, char** argv) {
             exit(1);
     }
 
+
     //printf("Child has access to the queue\n", getpid());
     int toend;
     for(int i=0;i<65;i++) {
         if (msgrcv(msqid, &buf, sizeof(msgbuffer), getpid(), 0) == 1) {
-            perror ("failed to receive message from parent\n");
+            perror ("failed to receive message from oss\n");
             exit(1);
         }
         toend = strcmp(buf.strData,"begin");
@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
                 exit(1);
         }
     }
-    printf("Child %d received message, starting clock.\n", getpid());
+    printf("Worker %d received message, starting clock.\n", getpid());
     printf("Occupied\tPID\t\tSeconds\tNanoseconds\n");
     for (int i=0;i<s;i++) {
       sleep(1);
@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
     strcpy(buf.strData, "worker done");
 
     if (msgsnd(msqid,&buf,sizeof(msgbuffer)-sizeof(long),0)==-1){
-        perror("msgsnd to parent failed\n");
+        perror("msgsnd to oss failed\n");
         exit(1);
     }
 
@@ -87,4 +87,4 @@ int main(int argc, char** argv) {
     shmdt(xint);
     return EXIT_SUCCESS;
 }
-
+                                                        
