@@ -21,14 +21,19 @@ typedef struct msgbuffer {
 
 int main(int argc, char** argv) {
 
-    int s = atoi(argv[1]); //this is an integer to store the amount of seconds
-    int n = atoi(argv[2]); //this is an integer to store the amount of nanoseconds
+    //int s = atoi(argv[1]); //this is an integer to store the amount of seconds
+    //int n = atoi(argv[2]); //this is an integer to store the amount of nanoseconds
 
     int shmid = shmget(SHMKEY, BUFF_SZ, 0777 | IPC_CREAT);
     if (shmid == -1) {
       printf(stderr,"Worker: Error with shmget\n");
       exit(1);
     }
+
+    srand(getpid());
+
+    int s = rand() % 16;
+    int n = rand() % 1000000;
 
     int *cint = (int*)(shmat(shmid,0,0));
     int *xint = cint + 1;
