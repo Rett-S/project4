@@ -30,10 +30,10 @@ int main(int argc, char** argv) {
       exit(1);
     }
 
-    srand(getpid());
+    srand(getpid()); // random seed for the next two integers
 
-    int s = rand() % 16;
-    int n = rand() % 1000000;
+    int s = rand() % 16;  //the child should only be active between 1 and 15 seconds
+    int n = rand() % 1000000; //this should add a random amount of nanoseconds between 1 and 999999
 
     int *cint = (int*)(shmat(shmid,0,0));
     int *xint = cint + 1;

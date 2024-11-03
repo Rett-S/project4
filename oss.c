@@ -29,6 +29,11 @@ typedef struct PCB_0 {
     pid_t pid; // process id of this child
     int seconds; // time when it was forked
     int nanoseconds; // time when it was forked
+    int serviceTimeSeconds; // total seconds it has been scheduled
+    int serviceTimeNano; // total nanoseconds it has been scheduled
+    int eventWaitSec; // when does its event happen in seconds?
+    int eventWaitNano; // when does its event happen in nano?
+    int blocked; // is this process waiting on event?
 } PCB;
 //struct PCB processTable[20];
 
@@ -41,10 +46,14 @@ PCB *create(int size){
                 table[i].pid=0;
                 table[i].seconds=0;
                 table[i].nanoseconds=0;
+                table[i].serviceTimeSeconds=0;
+                table[i].serviceTimeNano=0;
+                table[i].eventWaitSec=0;
+                table[i].eventWaitNano=0;
+                //table[i].blocked=0;
         }
         return table;
 }
-
 
 void add(PCB *pTable, int size, pid_t pid, int seconds, int nanoseconds){
         printf("adding to process table %d\n", pid);
@@ -54,10 +63,17 @@ void add(PCB *pTable, int size, pid_t pid, int seconds, int nanoseconds){
                         pTable[i].occupied = 1;
                         pTable[i].seconds = seconds;
                         pTable[i].nanoseconds = nanoseconds;
+                        pTable[i].serviceTimeSeconds=0;
+                        pTable[i].serviceTimeNano=0;
+                        pTable[i].eventWaitSec=0;
+                        pTable[i].eventWaitNano=0;
+                        //pTable[i].blocked=0;
+
                 break;
                 }
         }
 }
+
 
 void outputPCB(PCB *pTable, int size, FILE *output_stream) {
         fprintf(output_stream, "Occupied\tPID\tSeconds\tNanoseconds\n");
@@ -134,7 +150,15 @@ int main(int argc, char** argv) {
         break;
     case 0:
         if (strcmp(argv[1], x) == 0) { //if -h is present, displays a help message only
-          printf("-h Intructions on how to run this file: \n- use the 'make' command to generate executable files for oss and worker \n- worker will start a clock and terminate after a set amount of time, based on user input\n- oss will immediately fork to create two processes, one will keep track of a global system time that the workers will use to keep track of, and the other will create as many worker processes that the user specifies\n- to only run worker use the './worker' and enter in the amount of seconds and nanoseconds you want it to run for, such as './worker 5 300000'\n- to run oss, you can first run './oss -h' to display this help message in the terminal. To specify how many workers to run, enter '-n' followed by a number. To specify how long each worker should run, enter '-s' followed by a number. To specify how long each worker will run for, enter '-t' followed by a number. To specify the interval between each worker process, enter '-i' followed by a number. For example, you could enter './oss -n 4 -s 2 -t 10 -i 3' to run 4 workers total, 2 at a time, for 10 seconds each, with each worker starting every 3 seconds.\n- After a total of 60 seconds, the program will close.\n");
+        printf("- Intructions on how to run this file: \n- use the 'make' command to generate executable files for oss and worker \n- worker will start a clock and terminate after a random amount of time, based on the seed of the child process's PID\n- oss will immediately fork to create two processes, one will keep track of a global system time that the workers will use to keep track of, and the other will create as many worker processes that the user specifies\n- to run oss, you can first run './oss -h' to display this help message in the terminal. To specify how many workers to run, enter '-n' followed by a number. To specify how many processes can run at once, enter '-s' followed by a number. To specify the interval to launch each child process, enter '-t' followed by a number. For example, you could enter './oss -n 5 -s 3 -t 6' to run 5 workers total, 3 processes to run at most, with each child process starting every 6 seconds\n- to only run worker, enter in './worker', but this will wait for a message from a nonexistant parent in order to proceed with the rest of it's program \n- After a total of 60 seconds, the program will close entirely.\n- A logfile will be created to show the process of OSS and the workers.");
+         exit(1);
+        } else if (strcmp(argv[1], y) != 0) {
+          printf("Invalid user input, closing program.\n");
+          exit(1);
+        } else if (strcmp(argv[1], y) == 0) {//if -h is not present, and -n is, the process continues as normal
+         n = atoi(argv[2]); //int n stores how many processes to run, based on user input
+         printf("Processes to launch: %d \n",n);
+
         } else if (strcmp(argv[1], y) == 0) {//if -h is not present, and -n is, the process continues as normal
          n = atoi(argv[2]); //int n sotres how many processes to run, based on user input
          printf("Processes to launch: %d \n",n);
@@ -143,11 +167,11 @@ int main(int argc, char** argv) {
          pTable=create(n);
          s = atoi(argv[4]); //int s stores how many processes are allowed to run at once, based on user input
          printf("Simultaneous processes: %d \n",s);
-         t = atoi(argv[6]); //int t stores how long processes are allowed to run
-         printf("Time limit for each process: %d \n",t);
-         it = 0;
-         it = atoi(argv[8]); //int it stores a number that will be used to keep track of when to launch each process
-         printf("Interval between each process: %d \n",it);
+         it = atoi(argv[6]); //int t stores how long processes are allowed to run
+         printf("Time between each process launch: %d \n",t);
+         t = 0;
+         //it = atoi(argv[8]); //int it stores a number that will be used to keep track of when to launch each process
+         //printf("Interval between each process: %d \n",it);
 
          totalLaunched = 0; //keeps track of total processes
          currentProc = 0; //keeps track of active processes
@@ -213,9 +237,9 @@ int main(int argc, char** argv) {
                 exit(1);
 
          }
-         int toend;
-         wait(it);
-         printf("Oss received message: %s\n", rcvbuf.strData);
+         //int toend;
+         sleep(it);
+         printf("Oss received message from worker: Done %s\n", rcvbuf.strData);
 
          /*for (int h=0;h<65;h++) {
                 if (msgrcv(msqid, &rcvbuf, sizeof(msgbuffer), getpid(), 0) == -1) {
