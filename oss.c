@@ -96,10 +96,6 @@ int main(int argc, char** argv) {
       exit(1);
   }
 
-  int m = atoi(argv[2]);
-
-  pid_t child[m];
-
   switch (fork()) {
     case -1:
         fprintf(stderr,"Failed to fork\n");
@@ -142,6 +138,8 @@ int main(int argc, char** argv) {
         } else if (strcmp(argv[1], y) == 0) {//if -h is not present, and -n is, the process continues as normal
          n = atoi(argv[2]); //int n sotres how many processes to run, based on user input
          printf("Processes to launch: %d \n",n);
+         int m = atoi(argv[2]);
+         pid_t child[m];
          pTable=create(n);
          s = atoi(argv[4]); //int s stores how many processes are allowed to run at once, based on user input
          printf("Simultaneous processes: %d \n",s);
