@@ -224,19 +224,21 @@ int main(int argc, char** argv) {
          buf1.mtype = child[y];
          buf1.intData = child[y];
          strcpy(buf1.strData,"begin");
-         printf("Sending message to worker\n");
-         fprintf(log,"OSS: Sending message to worker %d PID %d at time %d:%d\n",y,child[y],*pint,*nint);
+         fprintf(log,"OSS: Generating process %d with PID %d and putting it into ready queue at time %d:%d\n",y,child[y],*pint,*nint);
          if (msgsnd(msqid, &buf1, sizeof(msgbuffer)-sizeof(long), 0) == -1) {
                 perror("msgsend to worker failed\n");
                 exit(1);
          }
-         fprintf(log,"OSS: Receiving message from worker %d PID %d at time %d:%d\n",y,child[y],*pint,*nint);
+         fprintf(log,"OSS: Dispatching process %d with PID %d from ready queue at time %d:%d\n",y,child[y],*pint,*nint);
+
+         fprintf(log,"OSS: Receiving process %d with PID %d at time %d:%d\n",y,child[y],*pint,*nint);
          msgbuffer rcvbuf;
-         if (msgrcv(msqid, &rcvbuf, sizeof(msgbuffer), getpid(),0) == -1) {
+
+         /*if (msgrcv(msqid, &rcvbuf, sizeof(msgbuffer), getpid(),0) == -1) {
                 perror("failed to receive message in oss\n");
                 exit(1);
 
-         }
+         }*/
          //int toend;
          sleep(it);
          printf("Oss received message from worker: Done %s\n", rcvbuf.strData);
